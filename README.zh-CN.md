@@ -5,6 +5,8 @@
 
 这是一个纯前端页面，不需要后端。
 
+![Drink Logo](./assets/intro.png)
+
 ## 使用方式
 
 1. 打开你的 GitHub Pages 网页。

@@ -5,6 +5,8 @@
 
 A tiny two-step drink logging page with zero backend.
 
+![Drink Logo](./assets/intro.png)
+
 ## How It Works
 
 1. Open your GitHub Pages site.
