@@ -124,7 +124,7 @@
       height: 14px;
       border-radius: 2px;
       opacity: 0.95;
-      animation: fall 900ms ease-out forwards;
+      animation: fall 1600ms ease-out forwards;
     }
 
     .pulse {
@@ -231,7 +231,7 @@
         piece.style.background = colors[Math.floor(Math.random() * colors.length)];
         piece.style.animationDelay = `${Math.random() * 160}ms`;
         confettiLayer.appendChild(piece);
-        setTimeout(() => piece.remove(), 1100);
+        setTimeout(() => piece.remove(), 1900);
       }
     }
 
