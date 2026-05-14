@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="./assets/logo.png" />
+  <title>Drink Log</title>
+  <style>
+    :root {
+      --bg: #f6f1e8;
+      --card: #fffdf9;
+      --ink: #1f1a15;
+      --muted: #6b5f51;
+      --line: #e7dccb;
+      --accent: #c65f2b;
+      --accent-2: #a94c1f;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 500px at 10% -10%, #ffd8bc 0%, transparent 45%),
+        radial-gradient(900px 500px at 100% 110%, #ffd9c3 0%, transparent 42%),
+        var(--bg);
+      padding: 18px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 500px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 14px 34px rgba(63, 40, 16, 0.08);
+    }
+
+    h1 { margin: 0; font-size: 28px; }
+    .subtitle { margin: 6px 0 14px; color: var(--muted); }
+
+    .steps {
+      margin: 0 0 16px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px dashed var(--line);
+      color: #4f4336;
+      background: #fcf6ed;
+      font-size: 14px;
+    }
+
+    .line { margin: 4px 0; }
+
+    label { display: block; margin: 10px 0 6px; font-weight: 600; }
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    .repo {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #5e5245;
+    }
+
+    button {
+      margin-top: 14px;
+      width: 100%;
+      border: 0;
+      border-radius: 11px;
+      padding: 12px 14px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .12s ease, background .12s ease;
+    }
+
+    button:hover { background: var(--accent-2); }
+    button:active { transform: translateY(1px) scale(.995); }
+
+    .status {
+      margin-top: 12px;
+      min-height: 20px;
+      color: #5b4c3d;
+      font-size: 14px;
+    }
+
+    .enjoy {
+      display: none;
+      margin-top: 14px;
+      width: 100%;
+      text-align: center;
+      padding: 12px 14px;
+      border-radius: 11px;
+      background: #e9f8ef;
+      border: 1px solid #b8e7c8;
+      color: #1f7a45;
+      font-weight: 700;
+    }
+
+    .confetti-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 20;
+    }
+
+    .confetti {
+      position: absolute;
+      top: -20px;
+      width: 8px;
+      height: 14px;
+      border-radius: 2px;
+      opacity: 0.95;
+      animation: fall 900ms ease-out forwards;
+    }
+
+    .pulse {
+      animation: pop .35s ease;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.015); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(0) rotate(0deg); }
+      100% { transform: translateY(180px) rotate(300deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="confettiLayer" class="confetti-layer"></div>
+  <main class="card" id="card">
+    <h1>Drink Log</h1>
+    <p class="subtitle" id="subtitle">One tiny ritual a day.</p>
+
+    <div class="steps">
+      <div class="line"><strong>Step 1:</strong> Click the button below</div>
+      <div class="line"><strong>Step 2:</strong> On GitHub, click <strong>Submit new issue</strong></div>
+    </div>
+
+    <label for="email">Email</label>
+    <input id="email" type="email" placeholder="you@example.com" required />
+
+    <div id="targetRepo" class="repo">Target repo: detecting...</div>
+
+    <button id="logBtn" type="button">Open Step 2</button>
+    <div id="enjoyTag" class="enjoy">Enjoy!</div>
+
+    <div id="status" class="status"></div>
+  </main>
+
+  <script>
+    const emailEl = document.getElementById("email");
+    const targetRepoEl = document.getElementById("targetRepo");
+    const subtitleEl = document.getElementById("subtitle");
+    const statusEl = document.getElementById("status");
+    const logBtn = document.getElementById("logBtn");
+    const enjoyTag = document.getElementById("enjoyTag");
+    const cardEl = document.getElementById("card");
+    const confettiLayer = document.getElementById("confettiLayer");
+    const EMAIL_KEY = "drink_log_email_v1";
+    const REPO_KEY = "drink_log_repo_v1";
+
+    const funLines = [
+      "One tiny ritual a day.",
+      "Tap, submit, done.",
+      "Future-you says thanks.",
+      "Small click, clean data.",
+      "Consistency beats intensity."
+    ];
+
+    subtitleEl.textContent = funLines[Math.floor(Math.random() * funLines.length)];
+
+    function todayISO() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function inferRepoFromHost() {
+      const host = window.location.hostname.toLowerCase();
+      const path = window.location.pathname.split("/").filter(Boolean);
+      const m = host.match(/^([a-z0-9-]+)\.github\.io$/i);
+      if (m && path.length >= 1) return { owner: m[1], repo: path[0] };
+      return null;
+    }
+
+    function getTargetRepo() {
+      const stored = localStorage.getItem(REPO_KEY);
+      if (stored && stored.includes("/")) {
+        const parts = stored.split("/");
+        if (parts.length === 2 && parts[0] && parts[1]) return { owner: parts[0], repo: parts[1] };
+      }
+      return inferRepoFromHost();
+    }
+
+    function setStatus(msg) {
+      statusEl.textContent = msg;
+    }
+
+    function pulse() {
+      cardEl.classList.remove("pulse");
+      void cardEl.offsetWidth;
+      cardEl.classList.add("pulse");
+    }
+
+    function celebrate() {
+      const colors = ["#f97316", "#ef4444", "#22c55e", "#3b82f6", "#eab308"];
+      for (let i = 0; i < 26; i += 1) {
+        const piece = document.createElement("span");
+        piece.className = "confetti";
+        piece.style.left = `${10 + Math.random() * 80}%`;
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDelay = `${Math.random() * 160}ms`;
+        confettiLayer.appendChild(piece);
+        setTimeout(() => piece.remove(), 1100);
+      }
+    }
+
+    function loadInitialData() {
+      const repo = getTargetRepo();
+      if (repo) {
+        localStorage.setItem(REPO_KEY, `${repo.owner}/${repo.repo}`);
+        targetRepoEl.textContent = `Target repo: ${repo.owner}/${repo.repo}`;
+        setStatus("Ready.");
+      } else {
+        targetRepoEl.textContent = "Target repo: not detected (please open from GitHub Pages URL).";
+        setStatus("Repo detection failed.");
+      }
+
+      const savedEmail = localStorage.getItem(EMAIL_KEY) || "";
+      if (savedEmail) emailEl.value = savedEmail;
+    }
+
+    logBtn.addEventListener("click", () => {
+      const email = emailEl.value.trim().toLowerCase();
+      const target = getTargetRepo();
+
+      if (!email) {
+        setStatus("Please enter email first.");
+        return;
+      }
+      if (!target) {
+        setStatus("Repo detection failed. Use your GitHub Pages URL.");
+        return;
+      }
+
+      localStorage.setItem(EMAIL_KEY, email);
+
+      const date = todayISO();
+      const title = `[drink-log] ${date}`;
+      const body = [
+        "<!-- drink-log -->",
+        `email: ${email}`,
+        `date: ${date}`,
+        "drank: yes"
+      ].join("\n");
+
+      const url =
+        `https://github.com/${encodeURIComponent(target.owner)}/${encodeURIComponent(target.repo)}` +
+        `/issues/new?title=${encodeURIComponent(title)}` +
+        `&body=${encodeURIComponent(body)}` +
+        `&labels=${encodeURIComponent("drink-log")}`;
+
+      pulse();
+      window.open(url, "_blank", "noopener");
+      celebrate();
+      logBtn.style.display = "none";
+      enjoyTag.style.display = "block";
+      setStatus("Enjoy!");
+    });
+
+    loadInitialData();
+  </script>
+</body>
+</html>

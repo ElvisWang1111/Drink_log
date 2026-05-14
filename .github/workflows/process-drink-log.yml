@@ -1,0 +1,53 @@
+name: Process Drink Log Issue
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  process:
+    if: (contains(github.event.issue.title, '[drink-log]') || contains(github.event.issue.body, '<!-- drink-log -->')) && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Save issue body
+        run: |
+          cat > issue_body.txt << 'BODY'
+          ${{ github.event.issue.body }}
+          BODY
+
+      - name: Process issue into CSV
+        env:
+          ISSUE_BODY_PATH: issue_body.txt
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: python3 scripts/process_issue.py
+
+      - name: Commit changes if any
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/drink-log.csv
+          if git diff --cached --quiet; then
+            echo "No data change"
+          else
+            git commit -m "log: drink status from issue #${{ github.event.issue.number }}"
+            git push
+          fi
+
+      - name: Close issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              state: 'closed'
+            });
